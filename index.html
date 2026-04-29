@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
 <title>数独游戏</title>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -17,7 +17,8 @@ body{
   background:var(--bg);color:var(--text);
   font-family:'Segoe UI',system-ui,sans-serif;
   min-height:100vh;display:flex;flex-direction:column;
-  align-items:center;padding:0 12px 60px;
+  align-items:center;padding:0 12px 80px;
+  -webkit-tap-highlight-color:transparent;
 }
 body::before{
   content:'';position:fixed;inset:0;pointer-events:none;
@@ -26,7 +27,7 @@ body::before{
     radial-gradient(ellipse 60% 50% at 80% 90%,rgba(0,212,170,.07) 0%,transparent 60%);
 }
 
-/* ─── HOME SCREEN ─────────────────────────────────────────── */
+/* ─── HOME SCREEN ─── */
 #home-screen{
   display:flex;flex-direction:column;align-items:center;
   justify-content:center;min-height:100vh;width:100%;max-width:480px;
@@ -39,14 +40,11 @@ body::before{
   margin-bottom:6px;
 }
 .home-sub{color:var(--text2);font-size:.88rem;margin-bottom:36px;letter-spacing:.04em;}
-
-.home-section{width:100%;margin-bottom:28px;}
+.home-section{width:100%;margin-bottom:24px;}
 .home-section-label{
   font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.16em;
   color:var(--text3);margin-bottom:12px;padding-left:4px;
 }
-
-/* Card option groups */
 .option-cards{display:flex;gap:12px;width:100%;}
 .opt-card{
   flex:1;padding:16px 10px;border:2px solid var(--border);border-radius:14px;
@@ -54,7 +52,7 @@ body::before{
   transition:border-color .18s,background .18s,transform .1s;
   display:flex;flex-direction:column;align-items:center;gap:6px;
 }
-.opt-card:hover{border-color:var(--border-bright);background:var(--surface2);transform:translateY(-1px);}
+.opt-card:hover{border-color:var(--border-bright);background:var(--surface2);}
 .opt-card.selected{
   border-color:var(--accent2);
   background:linear-gradient(135deg,rgba(124,58,237,.18),rgba(0,212,170,.12));
@@ -65,14 +63,13 @@ body::before{
 .opt-card.selected .opt-title{color:#fff;}
 .opt-card.selected .opt-desc{color:var(--accent2);}
 
-/* Difficulty cards */
 .diff-cards{display:flex;gap:10px;width:100%;}
 .diff-card{
   flex:1;padding:14px 8px;border:2px solid var(--border);border-radius:14px;
   background:var(--surface);cursor:pointer;text-align:center;
-  transition:border-color .18s,background .18s,transform .1s;
+  transition:border-color .18s,background .18s;
 }
-.diff-card:hover{border-color:var(--border-bright);background:var(--surface2);transform:translateY(-1px);}
+.diff-card:hover{border-color:var(--border-bright);background:var(--surface2);}
 .diff-card.selected-easy{border-color:#00d4aa;background:rgba(0,212,170,.1);}
 .diff-card.selected-medium{border-color:#f59e0b;background:rgba(245,158,11,.1);}
 .diff-card.selected-hard{border-color:#ef4444;background:rgba(239,68,68,.1);}
@@ -87,15 +84,20 @@ body::before{
   background:linear-gradient(135deg,#7c3aed,#60a5fa);
   color:#fff;font-size:1.05rem;font-weight:800;letter-spacing:.06em;cursor:pointer;
   box-shadow:0 6px 28px rgba(124,58,237,.45);
-  transition:transform .12s,box-shadow .12s;
-  margin-top:4px;
+  transition:transform .12s,box-shadow .12s;margin-top:4px;
 }
 .btn-start:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(124,58,237,.6);}
 .btn-start:active{transform:translateY(0);}
 
-/* ─── GAME SCREEN ─────────────────────────────────────────── */
-#game-screen{display:none;flex-direction:column;align-items:center;width:100%;padding-top:16px;}
+.btn-leaderboard{
+  width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text2);font-size:.88rem;font-weight:600;
+  cursor:pointer;transition:all .15s;margin-top:10px;
+}
+.btn-leaderboard:hover{border-color:var(--accent2);color:var(--accent2);}
 
+/* ─── GAME SCREEN ─── */
+#game-screen{display:none;flex-direction:column;align-items:center;width:100%;padding-top:16px;}
 .game-header{
   display:flex;align-items:center;justify-content:space-between;
   width:100%;max-width:640px;margin-bottom:14px;padding:0 2px;
@@ -112,12 +114,12 @@ body::before{
 }
 .btn-home:hover{border-color:var(--border-bright);color:var(--text);}
 
-.statsbar{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:7px 16px;text-align:center;min-width:80px;}
-.stat-lbl{font-size:.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;}
-.stat-val{font-size:1.2rem;font-weight:700;color:var(--accent2);line-height:1.3;}
+.statsbar{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;width:100%;max-width:640px;}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:7px 14px;text-align:center;min-width:72px;flex:1;}
+.stat-lbl{font-size:.58rem;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;}
+.stat-val{font-size:1.1rem;font-weight:700;color:var(--accent2);line-height:1.3;}
 .stat-val.warn{color:var(--warn);}.stat-val.danger{color:var(--danger);}
-.dbadge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:.7rem;font-weight:700;}
+.dbadge{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.68rem;font-weight:700;}
 .dbadge.easy{background:rgba(0,212,170,.15);color:#00d4aa;}
 .dbadge.medium{background:rgba(245,158,11,.15);color:#f59e0b;}
 .dbadge.hard{background:rgba(239,68,68,.15);color:#ef4444;}
@@ -125,11 +127,9 @@ body::before{
 .game-wrap{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%;}
 
 .board-wrap{
-  background:var(--surface);
-  border:2px solid var(--border-bright);
-  border-radius:12px;overflow:hidden;
-  box-shadow:0 0 40px rgba(124,58,237,.15),0 16px 48px rgba(0,0,0,.5);
-  display:inline-block;line-height:0;
+  background:var(--surface);border:2px solid var(--border-bright);border-radius:12px;
+  overflow:hidden;box-shadow:0 0 40px rgba(124,58,237,.15),0 16px 48px rgba(0,0,0,.5);
+  display:inline-block;line-height:0;touch-action:none;
 }
 table.sudoku-table{border-collapse:collapse;display:table!important;}
 td.cell{
@@ -151,6 +151,7 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
 .notes-wrap{display:grid;width:100%;height:100%;padding:1px;}
 .note-n{font-size:.45rem;color:#64748b;display:flex;align-items:center;justify-content:center;line-height:1;}
 
+/* Desktop panel */
 .panel{display:flex;flex-direction:column;gap:12px;width:160px;}
 .panel-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;}
 .panel-title{font-size:.6rem;color:var(--text2);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;}
@@ -160,6 +161,7 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
   background:var(--surface2);color:var(--text);
   font-size:1.1rem;font-weight:700;cursor:pointer;
   display:flex;align-items:center;justify-content:center;transition:all .12s;
+  -webkit-tap-highlight-color:transparent;
 }
 .num-btn:hover{border-color:var(--accent);color:#a78bfa;background:rgba(124,58,237,.15);}
 .num-btn:active{transform:scale(.9);}
@@ -167,22 +169,51 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
   width:100%;padding:9px;border:1px solid var(--border);border-radius:9px;
   background:var(--surface2);color:var(--text2);
   font-size:.78rem;font-weight:600;cursor:pointer;transition:all .12s;margin-bottom:6px;
+  -webkit-tap-highlight-color:transparent;
 }
 .tool-btn:hover{border-color:var(--accent2);color:var(--accent2);}
 .tool-btn.active{background:rgba(0,212,170,.15);border-color:var(--accent2);color:var(--accent2);}
 .tool-btn.red:hover{border-color:var(--danger);color:var(--danger);}
 
-.mobile-pad{display:none;margin-top:16px;width:100%;max-width:420px;}
-@media(max-width:600px){
+/* ─── MOBILE PAD ─── */
+.mobile-pad{display:none;margin-top:14px;width:100%;max-width:440px;padding:0 4px;}
+.mobile-tools{display:flex;gap:8px;margin-bottom:10px;}
+.mobile-tool-btn{
+  flex:1;padding:10px 6px;border:1px solid var(--border);border-radius:10px;
+  background:var(--surface);color:var(--text2);font-size:.75rem;font-weight:600;
+  cursor:pointer;transition:all .12s;text-align:center;
+  -webkit-tap-highlight-color:transparent;
+}
+.mobile-tool-btn:active{transform:scale(.95);}
+.mobile-tool-btn.active{background:rgba(0,212,170,.15);border-color:var(--accent2);color:var(--accent2);}
+.mobile-tool-btn.red{border-color:rgba(239,68,68,.3);color:#f87171;}
+.mobile-tool-btn.red:active{background:rgba(239,68,68,.15);}
+
+/* Input mode toggle */
+.input-mode-bar{
+  display:flex;gap:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;margin-bottom:10px;width:100%;
+}
+.imode-btn{
+  flex:1;padding:9px;font-size:.75rem;font-weight:700;border:none;
+  background:transparent;color:var(--text3);cursor:pointer;transition:all .15s;
+  -webkit-tap-highlight-color:transparent;
+}
+.imode-btn.active{background:var(--accent);color:#fff;}
+
+.mobile-numgrid{display:grid;gap:7px;}
+
+@media(max-width:640px){
   .panel{display:none;}
   .mobile-pad{display:block;}
 }
 
-/* ─── COMPLETE OVERLAY ────────────────────────────────────── */
+/* ─── LEADERBOARD OVERLAY ─── */
 .overlay{
-  position:fixed;inset:0;background:rgba(15,15,26,.92);backdrop-filter:blur(6px);
+  position:fixed;inset:0;background:rgba(15,15,26,.95);backdrop-filter:blur(8px);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:16px;z-index:100;opacity:0;pointer-events:none;transition:opacity .3s;
+  padding:20px;overflow-y:auto;
 }
 .overlay.show{opacity:1;pointer-events:all;}
 .ov-title{
@@ -196,18 +227,76 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
 .ov-card .val{font-size:1.6rem;font-weight:700;color:var(--accent2);}
 .ov-btns{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
 .btn-primary{
-  padding:12px 32px;border-radius:10px;border:none;
+  padding:12px 28px;border-radius:10px;border:none;
   background:linear-gradient(135deg,#7c3aed,#60a5fa);
-  color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;
+  color:#fff;font-size:.9rem;font-weight:700;cursor:pointer;
   box-shadow:0 4px 20px rgba(124,58,237,.4);transition:transform .1s;
 }
 .btn-primary:hover{transform:translateY(-2px);}
 .btn-secondary{
-  padding:12px 32px;border-radius:10px;
+  padding:12px 28px;border-radius:10px;
   border:1px solid var(--border);background:var(--surface);
-  color:var(--text2);font-size:.95rem;font-weight:700;cursor:pointer;transition:all .1s;
+  color:var(--text2);font-size:.9rem;font-weight:700;cursor:pointer;transition:all .1s;
 }
 .btn-secondary:hover{border-color:var(--border-bright);color:var(--text);}
+
+/* ─── LEADERBOARD SCREEN ─── */
+#leaderboard-screen{
+  display:none;flex-direction:column;align-items:center;
+  width:100%;max-width:560px;padding-top:20px;min-height:100vh;
+}
+.lb-header{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;margin-bottom:20px;
+}
+.lb-title{
+  font-size:1.4rem;font-weight:800;
+  background:linear-gradient(135deg,#a78bfa,#00d4aa);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.lb-tabs{display:flex;gap:8px;margin-bottom:16px;width:100%;}
+.lb-tab{
+  flex:1;padding:10px;border:1px solid var(--border);border-radius:10px;
+  background:var(--surface);color:var(--text2);font-size:.82rem;font-weight:600;
+  cursor:pointer;text-align:center;transition:all .15s;
+}
+.lb-tab.active-easy{border-color:#00d4aa;background:rgba(0,212,170,.1);color:#00d4aa;}
+.lb-tab.active-medium{border-color:#f59e0b;background:rgba(245,158,11,.1);color:#f59e0b;}
+.lb-tab.active-hard{border-color:#ef4444;background:rgba(239,68,68,.1);color:#ef4444;}
+
+.lb-mode-tabs{display:flex;gap:8px;margin-bottom:16px;width:100%;}
+.lb-mode-tab{
+  flex:1;padding:8px;border:1px solid var(--border);border-radius:8px;
+  background:var(--surface);color:var(--text3);font-size:.75rem;font-weight:600;
+  cursor:pointer;text-align:center;transition:all .15s;
+}
+.lb-mode-tab.active{border-color:var(--accent);background:rgba(124,58,237,.15);color:#a78bfa;}
+
+.lb-list{width:100%;display:flex;flex-direction:column;gap:8px;}
+.lb-row{
+  display:flex;align-items:center;gap:14px;
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:12px 16px;transition:border-color .15s;
+}
+.lb-row:first-child{border-color:rgba(255,215,0,.35);background:rgba(255,215,0,.05);}
+.lb-row:nth-child(2){border-color:rgba(192,192,192,.35);background:rgba(192,192,192,.04);}
+.lb-row:nth-child(3){border-color:rgba(205,127,50,.35);background:rgba(205,127,50,.04);}
+.lb-rank{font-size:1.1rem;font-weight:800;width:28px;text-align:center;color:var(--text3);}
+.lb-row:first-child .lb-rank{color:#fbbf24;}
+.lb-row:nth-child(2) .lb-rank{color:#94a3b8;}
+.lb-row:nth-child(3) .lb-rank{color:#cd7f32;}
+.lb-info{flex:1;}
+.lb-time{font-size:1.1rem;font-weight:700;color:var(--accent2);}
+.lb-meta{font-size:.68rem;color:var(--text3);margin-top:2px;}
+.lb-errs{font-size:.78rem;font-weight:600;color:var(--text2);}
+.lb-empty{color:var(--text3);font-size:.85rem;text-align:center;padding:32px 0;}
+
+.btn-clear-lb{
+  margin-top:16px;padding:8px 20px;border-radius:8px;border:1px solid rgba(239,68,68,.3);
+  background:transparent;color:#f87171;font-size:.75rem;font-weight:600;cursor:pointer;
+  transition:all .12s;
+}
+.btn-clear-lb:hover{background:rgba(239,68,68,.1);}
 
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 @keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
@@ -216,7 +305,7 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
 </head>
 <body>
 
-<!-- ══════════════ HOME SCREEN ══════════════ -->
+<!-- ══════ HOME SCREEN ══════ -->
 <div id="home-screen">
   <div class="home-logo">数独</div>
   <div class="home-sub">SUDOKU · 单人挑战</div>
@@ -240,27 +329,19 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
   <div class="home-section">
     <div class="home-section-label">选择难度</div>
     <div class="diff-cards" id="diff-cards">
-      <div class="diff-card selected-easy" data-diff="easy">
-        <div class="diff-name">简单</div>
-        <div class="diff-hint">适合新手<br>提示较多</div>
-      </div>
-      <div class="diff-card" data-diff="medium">
-        <div class="diff-name">中等</div>
-        <div class="diff-hint">均衡挑战<br>需要推理</div>
-      </div>
-      <div class="diff-card" data-diff="hard">
-        <div class="diff-name">困难</div>
-        <div class="diff-hint">高手专属<br>极少提示</div>
-      </div>
+      <div class="diff-card selected-easy" data-diff="easy"><div class="diff-name">简单</div><div class="diff-hint">适合新手<br>提示较多</div></div>
+      <div class="diff-card" data-diff="medium"><div class="diff-name">中等</div><div class="diff-hint">均衡挑战<br>需要推理</div></div>
+      <div class="diff-card" data-diff="hard"><div class="diff-name">困难</div><div class="diff-hint">高手专属<br>极少提示</div></div>
     </div>
   </div>
 
   <button class="btn-start" id="btn-start">开始游戏</button>
+  <button class="btn-leaderboard" id="btn-lb-home">🏆 查看历史成绩</button>
 </div>
 
-<!-- ══════════════ GAME SCREEN ══════════════ -->
+<!-- ══════ GAME SCREEN ══════ -->
 <div id="game-screen">
-  <div class="game-header" style="max-width:640px;width:100%;">
+  <div class="game-header">
     <div class="game-title">数独</div>
     <button class="btn-home" id="btn-home">← 返回首页</button>
   </div>
@@ -290,21 +371,61 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
     </div>
   </div>
 
+  <!-- Mobile pad -->
   <div class="mobile-pad">
-    <div class="numpad" id="numpad-m" style="grid-template-columns:repeat(5,1fr);gap:6px;"></div>
+    <!-- Input mode toggle -->
+    <div class="input-mode-bar" id="input-mode-bar">
+      <button class="imode-btn active" data-imode="pad" id="imode-pad">🔢 点击输入</button>
+      <button class="imode-btn" data-imode="keyboard" id="imode-keyboard">⌨️ 键盘输入</button>
+    </div>
+    <!-- Mobile tools row -->
+    <div class="mobile-tools">
+      <button class="mobile-tool-btn" id="mob-pencil">✏ 笔记</button>
+      <button class="mobile-tool-btn" id="mob-hint">💡 提示(<span id="mob-hint-left">5</span>)</button>
+      <button class="mobile-tool-btn" id="mob-erase">⌫ 擦除</button>
+      <button class="mobile-tool-btn red" id="mob-new">↺ 新局</button>
+    </div>
+    <!-- Numpad grid (shown in pad mode) -->
+    <div class="mobile-numgrid" id="numpad-m"></div>
+    <!-- Keyboard hint (shown in keyboard mode) -->
+    <div id="keyboard-hint" style="display:none;text-align:center;color:var(--text3);font-size:.8rem;padding:16px 0;">
+      请使用手机弹出的系统键盘输入数字<br>
+      <span style="color:var(--text2);font-size:.72rem;">点击棋盘格子后会自动弹出键盘</span>
+    </div>
   </div>
 </div>
 
-<!-- ══════════════ COMPLETE OVERLAY ══════════════ -->
+<!-- ══════ LEADERBOARD SCREEN ══════ -->
+<div id="leaderboard-screen">
+  <div class="lb-header" style="width:100%;">
+    <div class="lb-title">🏆 历史成绩</div>
+    <button class="btn-home" id="btn-lb-back">← 返回</button>
+  </div>
+  <div class="lb-mode-tabs" id="lb-mode-tabs">
+    <div class="lb-mode-tab active" data-lbmode="9">9×9 经典</div>
+    <div class="lb-mode-tab" data-lbmode="4">4×4 迷你</div>
+  </div>
+  <div class="lb-tabs" id="lb-tabs">
+    <div class="lb-tab active-easy" data-lbdiff="easy">简单</div>
+    <div class="lb-tab" data-lbdiff="medium">中等</div>
+    <div class="lb-tab" data-lbdiff="hard">困难</div>
+  </div>
+  <div class="lb-list" id="lb-list"></div>
+  <button class="btn-clear-lb" id="btn-clear-lb">清除当前成绩</button>
+</div>
+
+<!-- ══════ COMPLETE OVERLAY ══════ -->
 <div class="overlay" id="overlay">
   <div class="ov-title">🎉 恭喜完成！</div>
   <div id="ov-info" style="color:var(--text2);font-size:.9rem;text-align:center;"></div>
   <div class="ov-cards">
     <div class="ov-card"><div class="lbl">用时</div><div class="val" id="ov-time">-</div></div>
     <div class="ov-card"><div class="lbl">错误</div><div class="val" id="ov-err">-</div></div>
+    <div class="ov-card"><div class="lbl">排名</div><div class="val" id="ov-rank">-</div></div>
   </div>
   <div class="ov-btns">
     <button class="btn-primary" id="ov-again">再来一局</button>
+    <button class="btn-secondary" id="ov-lb">查看排行</button>
     <button class="btn-secondary" id="ov-home">返回首页</button>
   </div>
 </div>
@@ -316,12 +437,10 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
 // ── Sudoku Generator ──────────────────────────────────────────────
 function shuffle(a){
   for(let i=a.length-1;i>0;i--){
-    const j=0|Math.random()*(i+1);
-    [a[i],a[j]]=[a[j],a[i]];
+    const j=0|Math.random()*(i+1);[a[i],a[j]]=[a[j],a[i]];
   }
   return a;
 }
-
 function buildComplete9(){
   const digits=shuffle([1,2,3,4,5,6,7,8,9]);
   const g=[];
@@ -334,10 +453,9 @@ function buildComplete9(){
     const t=[g[b*3+rows[0]],g[b*3+rows[1]],g[b*3+rows[2]]];
     g[b*3]=t[0];g[b*3+1]=t[1];g[b*3+2]=t[2];
   }
-  const bands=shuffle([0,1,2]);
-  const bg=[];
+  const bands=shuffle([0,1,2]);const bg=[];
   bands.forEach(b=>bg.push(g[b*3],g[b*3+1],g[b*3+2]));
-  for(let r=0;r<9;r++) g[r]=bg[r];
+  for(let r=0;r<9;r++)g[r]=bg[r];
   for(let s=0;s<3;s++){
     const cols=shuffle([0,1,2]);
     for(let r=0;r<9;r++){
@@ -347,13 +465,10 @@ function buildComplete9(){
   }
   const stacks=shuffle([0,1,2]);
   for(let r=0;r<9;r++){
-    const row=[];
-    stacks.forEach(s=>row.push(g[r][s*3],g[r][s*3+1],g[r][s*3+2]));
-    g[r]=row;
+    const row=[];stacks.forEach(s=>row.push(g[r][s*3],g[r][s*3+1],g[r][s*3+2]));g[r]=row;
   }
   return g;
 }
-
 function buildComplete4(){
   const digits=shuffle([1,2,3,4]);
   const g=[];
@@ -361,15 +476,11 @@ function buildComplete4(){
     const shift=Math.floor(r/2)+(r%2)*2;
     g.push(Array.from({length:4},(_,c)=>digits[(c+shift)%4]));
   }
-  for(let b=0;b<2;b++){
-    if(Math.random()<.5){const t=g[b*2];g[b*2]=g[b*2+1];g[b*2+1]=t;}
-  }
+  for(let b=0;b<2;b++){if(Math.random()<.5){const t=g[b*2];g[b*2]=g[b*2+1];g[b*2+1]=t;}}
   if(Math.random()<.5){[g[0],g[2]]=[g[2],g[0]];[g[1],g[3]]=[g[3],g[1]];}
   return g;
 }
-
 const REMOVE={4:{easy:4,medium:7,hard:10},9:{easy:36,medium:46,hard:54}};
-
 function makePuzzle(sol,N,cnt){
   const p=sol.map(r=>[...r]);
   const pos=shuffle(Array.from({length:N*N},(_,i)=>i));
@@ -381,7 +492,6 @@ function makePuzzle(sol,N,cnt){
   }
   return p;
 }
-
 function generate(N,diff){
   const sol=N===9?buildComplete9():buildComplete4();
   return {solution:sol,puzzle:makePuzzle(sol,N,REMOVE[N][diff])};
@@ -393,90 +503,165 @@ let solution=[],board=[],notes=[];
 let selected=null;
 let errorCount=0,hintLeft=5,pencilMode=false;
 let timerSec=0,timerInt=null,finished=false;
+let inputMode='pad'; // 'pad' | 'keyboard'
 
-// ── Screen switching ──────────────────────────────────────────────
-function showHome(){
-  stopTimer();
-  document.getElementById('game-screen').style.display='none';
-  const hs=document.getElementById('home-screen');
-  hs.style.display='flex';
-  hs.classList.add('anim-in');
-  document.getElementById('overlay').classList.remove('show');
+// ── Leaderboard Storage ───────────────────────────────────────────
+const LB_KEY='sudoku_scores_v2';
+function loadScores(){
+  try{return JSON.parse(localStorage.getItem(LB_KEY))||{};}catch{return{};}
+}
+function saveScore(n,diff,timeSec,errors){
+  const scores=loadScores();
+  const key=`${n}_${diff}`;
+  if(!scores[key])scores[key]=[];
+  const entry={time:timeSec,errors,date:new Date().toLocaleDateString('zh-CN')};
+  scores[key].push(entry);
+  // Keep top 10 sorted by time asc, then errors asc
+  scores[key].sort((a,b)=>a.time-b.time||a.errors-b.errors);
+  scores[key]=scores[key].slice(0,10);
+  localStorage.setItem(LB_KEY,JSON.stringify(scores));
+  // Return rank (1-based)
+  return scores[key].findIndex(e=>e.time===entry.time&&e.errors===entry.errors&&e.date===entry.date)+1;
+}
+function getScores(n,diff){
+  const scores=loadScores();
+  return scores[`${n}_${diff}`]||[];
+}
+function clearScores(n,diff){
+  const scores=loadScores();
+  delete scores[`${n}_${diff}`];
+  localStorage.setItem(LB_KEY,JSON.stringify(scores));
 }
 
+// ── Screen helpers ────────────────────────────────────────────────
+function hideAll(){
+  ['home-screen','game-screen','leaderboard-screen'].forEach(id=>{
+    document.getElementById(id).style.display='none';
+  });
+}
+function showHome(){
+  stopTimer();
+  document.getElementById('overlay').classList.remove('show');
+  hideAll();
+  const hs=document.getElementById('home-screen');
+  hs.style.display='flex';hs.classList.add('anim-in');
+}
 function showGame(){
-  document.getElementById('home-screen').style.display='none';
+  hideAll();
   const gs=document.getElementById('game-screen');
-  gs.style.display='flex';
-  gs.classList.add('anim-in');
+  gs.style.display='flex';gs.classList.add('anim-in');
+}
+function showLeaderboard(fromGame){
+  hideAll();
+  const ls=document.getElementById('leaderboard-screen');
+  ls.style.display='flex';ls.classList.add('anim-in');
+  document.getElementById('btn-lb-back').dataset.fromGame=fromGame?'1':'0';
+  renderLeaderboard();
 }
 
 // ── Home screen interactions ──────────────────────────────────────
-let selectedMode=9, selectedDiff='easy';
-
+let selectedMode=9,selectedDiff='easy';
 document.getElementById('mode-cards').addEventListener('click',e=>{
   const card=e.target.closest('.opt-card');if(!card)return;
   document.querySelectorAll('#mode-cards .opt-card').forEach(c=>c.classList.remove('selected'));
-  card.classList.add('selected');
-  selectedMode=parseInt(card.dataset.mode);
+  card.classList.add('selected');selectedMode=parseInt(card.dataset.mode);
 });
-
 document.getElementById('diff-cards').addEventListener('click',e=>{
   const card=e.target.closest('.diff-card');if(!card)return;
   document.querySelectorAll('#diff-cards .diff-card').forEach(c=>{
     c.classList.remove('selected-easy','selected-medium','selected-hard');
   });
-  const diff=card.dataset.diff;
-  card.classList.add('selected-'+diff);
-  selectedDiff=diff;
+  card.classList.add('selected-'+card.dataset.diff);selectedDiff=card.dataset.diff;
+});
+document.getElementById('btn-start').addEventListener('click',()=>{
+  N=selectedMode;BOX=Math.sqrt(N);DIFF=selectedDiff;
+  showGame();startNewGame();
+});
+document.getElementById('btn-lb-home').addEventListener('click',()=>showLeaderboard(false));
+
+// ── Leaderboard screen ────────────────────────────────────────────
+let lbN=9,lbDiff='easy';
+document.getElementById('lb-mode-tabs').addEventListener('click',e=>{
+  const tab=e.target.closest('.lb-mode-tab');if(!tab)return;
+  document.querySelectorAll('.lb-mode-tab').forEach(t=>t.classList.remove('active'));
+  tab.classList.add('active');lbN=parseInt(tab.dataset.lbmode);renderLeaderboard();
+});
+document.getElementById('lb-tabs').addEventListener('click',e=>{
+  const tab=e.target.closest('.lb-tab');if(!tab)return;
+  document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active-easy','active-medium','active-hard'));
+  lbDiff=tab.dataset.lbdiff;tab.classList.add('active-'+lbDiff);renderLeaderboard();
+});
+document.getElementById('btn-lb-back').addEventListener('click',()=>{
+  const fromGame=document.getElementById('btn-lb-back').dataset.fromGame==='1';
+  if(fromGame)showGame();else showHome();
+});
+document.getElementById('btn-clear-lb').addEventListener('click',()=>{
+  if(confirm(`确认清除 ${lbN}×${lbN} ${{easy:'简单',medium:'中等',hard:'困难'}[lbDiff]} 的所有成绩？`)){
+    clearScores(lbN,lbDiff);renderLeaderboard();
+  }
 });
 
-document.getElementById('btn-start').addEventListener('click',()=>{
-  N=selectedMode;
-  BOX=Math.sqrt(N);
-  DIFF=selectedDiff;
-  showGame();
-  startNewGame();
-});
+function fmt(s){return String(0|s/60).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
+
+function renderLeaderboard(){
+  const list=document.getElementById('lb-list');
+  const data=getScores(lbN,lbDiff);
+  if(!data.length){
+    list.innerHTML='<div class="lb-empty">暂无成绩，快去挑战吧！</div>';return;
+  }
+  const medals=['🥇','🥈','🥉'];
+  list.innerHTML=data.map((e,i)=>`
+    <div class="lb-row">
+      <div class="lb-rank">${medals[i]||'#'+(i+1)}</div>
+      <div class="lb-info">
+        <div class="lb-time">${fmt(e.time)}</div>
+        <div class="lb-meta">${e.date}</div>
+      </div>
+      <div class="lb-errs">错误 ${e.errors}</div>
+    </div>
+  `).join('');
+}
 
 // ── Timer ─────────────────────────────────────────────────────────
-function fmt(s){return String(0|s/60).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
 function startTimer(){
-  timerSec=0;
-  clearInterval(timerInt);
+  timerSec=0;clearInterval(timerInt);
   document.getElementById('timer').textContent=fmt(0);
-  timerInt=setInterval(()=>{if(!finished){timerSec++;document.getElementById('timer').textContent=fmt(timerSec);}},1000);
+  timerInt=setInterval(()=>{
+    if(!finished){timerSec++;document.getElementById('timer').textContent=fmt(timerSec);}
+  },1000);
 }
-function stopTimer(){clearInterval(timerInt);}
+function stopTimer(){clearInterval(timerInt);timerInt=null;}
 
 // ── Start new game ────────────────────────────────────────────────
 function startNewGame(){
   selected=null;errorCount=0;hintLeft=5;pencilMode=false;finished=false;
   document.getElementById('overlay').classList.remove('show');
   document.getElementById('btn-pencil').classList.remove('active');
+  document.getElementById('mob-pencil').classList.remove('active');
   updateErr();
   document.getElementById('hint-left').textContent=hintLeft;
+  document.getElementById('mob-hint-left').textContent=hintLeft;
   const diffMap={easy:'简单',medium:'中等',hard:'困难'};
-  document.getElementById('diff-disp').innerHTML=
-    `<span class="dbadge ${DIFF}">${diffMap[DIFF]}</span>`;
+  document.getElementById('diff-disp').innerHTML=`<span class="dbadge ${DIFF}">${diffMap[DIFF]}</span>`;
   stopTimer();
   const g=generate(N,DIFF);
   solution=g.solution;
   board=g.puzzle.map(r=>r.map(v=>({given:v!==0,val:v,error:false})));
   notes=Array.from({length:N},()=>Array.from({length:N},()=>new Set()));
-  renderBoard();
-  buildNumpad();
-  startTimer();
+  renderBoard();buildNumpad();startTimer();
 }
 
-// ── Render board ──────────────────────────────────────────────────
+// ── Cell size calculation (Bug fix: account for padding/border) ───
 function getCellSize(){
-  const vw=window.innerWidth||800;
-  const panelW=vw>640?200:0;
-  const avail=Math.min(vw-panelW-60,560);
-  let cs=Math.floor(avail/N);
-  const minCs=N===4?60:36,maxCs=N===4?92:60;
-  return Math.max(minCs,Math.min(maxCs,cs));
+  const vw=Math.min(window.innerWidth||800,800);
+  const isMobile=window.innerWidth<=640;
+  const padding=isMobile?28:80; // horizontal padding
+  const panelW=isMobile?0:200;
+  const gap=isMobile?0:20;
+  const avail=vw-panelW-gap-padding;
+  const maxSize=N===4?(isMobile?88:92):(isMobile?42:60);
+  const minSize=N===4?56:32;
+  return Math.max(minSize,Math.min(maxSize,Math.floor(avail/N)));
 }
 
 function renderBoard(){
@@ -496,7 +681,7 @@ function renderBoard(){
       if((r+1)%BOX===0&&r<N-1)td.classList.add('bb');
       if(c===N-1)td.classList.add('last-col');
       if(r===N-1)td.classList.add('last-row');
-      td.addEventListener('click',()=>selectCell(r,c));
+      td.addEventListener('click',()=>onCellClick(r,c));
       tr.appendChild(td);
     }
     tbl.appendChild(tr);
@@ -504,11 +689,20 @@ function renderBoard(){
   refreshAll(nfs);
 }
 
+// ── Cell click: handle keyboard mode ─────────────────────────────
+function onCellClick(r,c){
+  selectCell(r,c);
+  // In keyboard mode on mobile, focus a hidden input to trigger keyboard
+  if(inputMode==='keyboard'&&window.innerWidth<=640){
+    const hi=document.getElementById('hidden-input');
+    if(hi){hi.focus();}
+  }
+}
+
 function getCell(r,c){
   const rows=document.getElementById('board-table').rows;
   return(rows&&rows[r])?rows[r].cells[c]:null;
 }
-
 function refreshAll(nfsPassed){
   if(!board.length)return;
   const cs=getCellSize();
@@ -555,23 +749,85 @@ function refreshAll(nfsPassed){
 
 // ── Numpad ────────────────────────────────────────────────────────
 function buildNumpad(){
-  ['numpad','numpad-m'].forEach(id=>{
-    const el=document.getElementById(id);if(!el)return;
+  // Desktop numpad
+  const el=document.getElementById('numpad');
+  if(el){
     const cols=N===4?4:3;
     el.style.gridTemplateColumns=`repeat(${cols},1fr)`;
     el.innerHTML='';
     for(let n=1;n<=N;n++){
-      const b=document.createElement('button');
-      b.className='num-btn';b.textContent=n;
-      b.addEventListener('click',()=>inputNum(n));
-      el.appendChild(b);
+      const b=document.createElement('button');b.className='num-btn';b.textContent=n;
+      b.addEventListener('click',()=>inputNum(n));el.appendChild(b);
     }
     const e=document.createElement('button');
     e.className='num-btn';e.style.fontSize='.9rem';e.textContent='⌫';
-    e.addEventListener('click',()=>inputNum(0));
-    el.appendChild(e);
-  });
+    e.addEventListener('click',()=>inputNum(0));el.appendChild(e);
+  }
+  // Mobile numpad
+  buildMobileNumpad();
 }
+function buildMobileNumpad(){
+  const el=document.getElementById('numpad-m');if(!el)return;
+  const cols=N===4?4:5;
+  el.style.gridTemplateColumns=`repeat(${cols},1fr)`;
+  el.innerHTML='';
+  for(let n=1;n<=N;n++){
+    const b=document.createElement('button');b.className='num-btn';
+    b.style.fontSize=N===9?'1.2rem':'1.4rem';
+    b.style.aspectRatio='1';b.style.padding='0';
+    b.textContent=n;
+    b.addEventListener('click',()=>inputNum(n));el.appendChild(b);
+  }
+}
+
+// ── Input mode toggle ─────────────────────────────────────────────
+function setInputMode(mode){
+  inputMode=mode;
+  document.querySelectorAll('.imode-btn').forEach(b=>{
+    b.classList.toggle('active',b.dataset.imode===mode);
+  });
+  const numgrid=document.getElementById('numpad-m');
+  const kbhint=document.getElementById('keyboard-hint');
+  if(mode==='pad'){
+    numgrid.style.display='grid';
+    kbhint.style.display='none';
+  } else {
+    numgrid.style.display='none';
+    kbhint.style.display='block';
+    // Create hidden input for triggering keyboard
+    ensureHiddenInput();
+  }
+}
+function ensureHiddenInput(){
+  if(document.getElementById('hidden-input'))return;
+  const inp=document.createElement('input');
+  inp.id='hidden-input';inp.type='number';inp.inputMode='numeric';
+  inp.style.cssText='position:fixed;top:-100px;left:0;opacity:0;width:1px;height:1px;pointer-events:none;';
+  inp.setAttribute('autocomplete','off');
+  inp.addEventListener('input',e=>{
+    const v=parseInt(e.target.value);
+    if(v>=1&&v<=N)inputNum(v);
+    else if(e.target.value==='')inputNum(0);
+    inp.value='';
+  });
+  inp.addEventListener('keydown',e=>{
+    // Arrow key navigation
+    if(!selected)return;
+    const dirs={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]};
+    if(dirs[e.key]){
+      e.preventDefault();
+      const[dr,dc]=dirs[e.key];
+      selectCell(Math.max(0,Math.min(N-1,selected.r+dr)),Math.max(0,Math.min(N-1,selected.c+dc)));
+    }
+    if(e.key==='Backspace'||e.key==='Delete'){inputNum(0);}
+  });
+  document.body.appendChild(inp);
+}
+
+document.getElementById('input-mode-bar').addEventListener('click',e=>{
+  const btn=e.target.closest('.imode-btn');if(!btn)return;
+  setInputMode(btn.dataset.imode);
+});
 
 // ── Input ─────────────────────────────────────────────────────────
 function selectCell(r,c){selected={r,c};refreshAll();}
@@ -612,6 +868,7 @@ function hint(){
   board[r][c].val=solution[r][c];board[r][c].error=false;notes[r][c].clear();
   hintLeft--;
   document.getElementById('hint-left').textContent=hintLeft;
+  document.getElementById('mob-hint-left').textContent=hintLeft;
   const td=getCell(r,c);
   if(td){td.classList.add('hint-flash');setTimeout(()=>td.classList.remove('hint-flash'),800);}
   refreshAll();checkDone();
@@ -621,12 +878,17 @@ function checkDone(){
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)
     if(board[r][c].val!==solution[r][c])return;
   finished=true;stopTimer();
+  const rank=saveScore(N,DIFF,timerSec,errorCount);
   setTimeout(()=>{
     document.getElementById('ov-time').textContent=fmt(timerSec);
     document.getElementById('ov-err').textContent=errorCount;
+    const rankEl=document.getElementById('ov-rank');
+    if(rank===1)rankEl.textContent='🥇 第1';
+    else if(rank===2)rankEl.textContent='🥈 第2';
+    else if(rank===3)rankEl.textContent='🥉 第3';
+    else rankEl.textContent='#'+rank;
     const diffMap={easy:'简单',medium:'中等',hard:'困难'};
-    document.getElementById('ov-info').textContent=
-      `${diffMap[DIFF]} · ${N}×${N} 模式`;
+    document.getElementById('ov-info').textContent=`${diffMap[DIFF]} · ${N}×${N} 模式`;
     document.getElementById('overlay').classList.add('show');
   },400);
 }
@@ -637,38 +899,61 @@ function updateErr(){
   el.className='stat-val'+(errorCount>=5?' danger':errorCount>=3?' warn':'');
 }
 
-// ── Bindings ──────────────────────────────────────────────────────
+// ── Mobile tool buttons ───────────────────────────────────────────
+document.getElementById('mob-pencil').addEventListener('click',()=>{
+  pencilMode=!pencilMode;
+  document.getElementById('mob-pencil').classList.toggle('active',pencilMode);
+  document.getElementById('btn-pencil').classList.toggle('active',pencilMode);
+});
+document.getElementById('mob-hint').addEventListener('click',hint);
+document.getElementById('mob-erase').addEventListener('click',()=>inputNum(0));
+document.getElementById('mob-new').addEventListener('click',startNewGame);
+
+// ── Desktop bindings ──────────────────────────────────────────────
 document.getElementById('btn-home').addEventListener('click',()=>{
   if(confirm('返回首页将结束当前游戏，确认吗？'))showHome();
 });
 document.getElementById('btn-pencil').addEventListener('click',()=>{
   pencilMode=!pencilMode;
   document.getElementById('btn-pencil').classList.toggle('active',pencilMode);
+  document.getElementById('mob-pencil').classList.toggle('active',pencilMode);
 });
 document.getElementById('btn-hint').addEventListener('click',hint);
 document.getElementById('btn-new').addEventListener('click',startNewGame);
 document.getElementById('ov-again').addEventListener('click',()=>{
+  document.getElementById('overlay').classList.remove('show');startNewGame();
+});
+document.getElementById('ov-lb').addEventListener('click',()=>{
   document.getElementById('overlay').classList.remove('show');
-  startNewGame();
+  lbN=N;lbDiff=DIFF;
+  // sync lb tabs
+  document.querySelectorAll('.lb-mode-tab').forEach(t=>{
+    t.classList.toggle('active',parseInt(t.dataset.lbmode)===N);
+  });
+  document.querySelectorAll('.lb-tab').forEach(t=>{
+    t.classList.remove('active-easy','active-medium','active-hard');
+    if(t.dataset.lbdiff===DIFF)t.classList.add('active-'+DIFF);
+  });
+  showLeaderboard(true);
 });
 document.getElementById('ov-home').addEventListener('click',()=>{
-  document.getElementById('overlay').classList.remove('show');
-  showHome();
+  document.getElementById('overlay').classList.remove('show');showHome();
 });
 
+// ── Keyboard ─────────────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
   if(document.getElementById('game-screen').style.display==='none')return;
   if(finished)return;
-  if(!selected){
-    if(e.key==='Enter'){selectCell(0,0);}
-    return;
-  }
+  // Don't intercept if hidden input is focused
+  if(document.activeElement&&document.activeElement.id==='hidden-input')return;
+  if(!selected){if(e.key==='Enter')selectCell(0,0);return;}
   const {r,c}=selected;
   if(e.key>='1'&&e.key<=String(N)){e.preventDefault();inputNum(+e.key);return;}
   if(e.key==='Backspace'||e.key==='Delete'||e.key==='0'){e.preventDefault();inputNum(0);return;}
   if(e.key==='p'||e.key==='P'){
     pencilMode=!pencilMode;
     document.getElementById('btn-pencil').classList.toggle('active',pencilMode);
+    document.getElementById('mob-pencil').classList.toggle('active',pencilMode);
     return;
   }
   const dirs={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1],
@@ -680,15 +965,26 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+// ── Bug fix: visibility change should not restart timer from 0 ────
 document.addEventListener('visibilitychange',()=>{
   if(document.getElementById('game-screen').style.display==='none')return;
-  if(document.hidden)stopTimer();
-  else if(!finished&&board.length)startTimer();
+  if(document.hidden){
+    // Just pause - don't clear
+    clearInterval(timerInt);timerInt=null;
+  } else if(!finished&&board.length){
+    // Resume from current timerSec
+    clearInterval(timerInt);
+    timerInt=setInterval(()=>{
+      if(!finished){timerSec++;document.getElementById('timer').textContent=fmt(timerSec);}
+    },1000);
+  }
 });
 
-window.addEventListener('resize',()=>{if(board.length&&document.getElementById('game-screen').style.display!=='none')renderBoard();});
+window.addEventListener('resize',()=>{
+  if(board.length&&document.getElementById('game-screen').style.display!=='none')renderBoard();
+});
 
-// ── Boot: show home ───────────────────────────────────────────────
+// Boot
 showHome();
 })();
 </script>
