@@ -39,24 +39,49 @@ body::before{
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
   margin-bottom:6px;
 }
-.home-sub{color:var(--text2);font-size:.88rem;margin-bottom:36px;letter-spacing:.04em;}
+.home-sub{color:var(--text2);font-size:.88rem;margin-bottom:10px;letter-spacing:.04em;}
 
-/* ─── 昵称输入 ─── */
-.nickname-section{width:100%;margin-bottom:24px;}
-.nickname-wrap{
-  display:flex;align-items:center;gap:10px;
-  background:var(--surface);border:2px solid var(--border);
-  border-radius:12px;padding:8px 16px;
-  transition:border-color .2s;
+/* ─── Auth Section ─── */
+.auth-section{width:100%;margin-bottom:20px;}
+.auth-tabs{display:flex;gap:0;margin-bottom:14px;border-radius:10px;overflow:hidden;border:1px solid var(--border);}
+.auth-tab{
+  flex:1;padding:10px;font-size:.82rem;font-weight:700;border:none;
+  background:var(--surface);color:var(--text3);cursor:pointer;transition:all .15s;
 }
-.nickname-wrap:focus-within{border-color:var(--accent2);}
-.nickname-icon{font-size:1.2rem;}
-.nickname-input{
-  flex:1;background:transparent;border:none;outline:none;
-  color:var(--text);font-size:.95rem;font-weight:600;
-  letter-spacing:.03em;
+.auth-tab.active{background:var(--accent);color:#fff;}
+.auth-form{display:flex;flex-direction:column;gap:10px;}
+.auth-input{
+  width:100%;padding:12px 16px;border-radius:10px;border:2px solid var(--border);
+  background:var(--surface);color:var(--text);font-size:.9rem;outline:none;transition:border-color .2s;
 }
-.nickname-input::placeholder{color:var(--text3);}
+.auth-input:focus{border-color:var(--accent2);}
+.auth-input::placeholder{color:var(--text3);}
+.auth-btn{
+  width:100%;padding:12px;border-radius:10px;border:none;
+  background:linear-gradient(135deg,#7c3aed,#60a5fa);
+  color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;
+  box-shadow:0 4px 16px rgba(124,58,237,.35);transition:transform .1s;
+}
+.auth-btn:hover{transform:translateY(-2px);}
+.auth-btn:active{transform:translateY(0);}
+.auth-msg{font-size:.78rem;color:var(--text3);text-align:center;min-height:20px;margin-top:2px;}
+.auth-msg.error{color:var(--danger);}
+.auth-msg.success{color:var(--accent2);}
+
+/* ─── Logged in user bar ─── */
+.user-bar{
+  width:100%;display:none;align-items:center;justify-content:space-between;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:10px 14px;margin-bottom:16px;
+}
+.user-bar .user-info{display:flex;align-items:center;gap:8px;}
+.user-bar .user-icon{font-size:1.2rem;}
+.user-bar .user-name{font-size:.9rem;font-weight:700;color:var(--accent2);}
+.user-bar .btn-logout{
+  padding:5px 12px;border-radius:6px;border:1px solid var(--border);
+  background:transparent;color:var(--text3);font-size:.72rem;font-weight:600;cursor:pointer;transition:all .12s;
+}
+.user-bar .btn-logout:hover{border-color:var(--danger);color:var(--danger);}
 
 .home-section{width:100%;margin-bottom:24px;}
 .home-section-label{
@@ -336,44 +361,74 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
 <!-- ══════ HOME SCREEN ══════ -->
 <div id="home-screen">
   <div class="home-logo">数独</div>
-  
-  <div class="home-section" style="margin-bottom:12px;">
-    <div class="home-sub" style="margin-bottom:10px;">SUDOKU · 单人挑战</div>
-    <div class="nickname-wrap">
-      <span class="nickname-icon">👤</span>
-      <input type="text" class="nickname-input" id="nickname-input" 
-             placeholder="输入你的昵称（可选）" maxlength="12" />
+  <div class="home-sub">SUDOKU · 单人挑战</div>
+
+  <!-- Auth Section -->
+  <div class="auth-section" id="auth-section">
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-auth="login">登录</button>
+      <button class="auth-tab" data-auth="register">注册</button>
+    </div>
+
+    <!-- Login Form -->
+    <div class="auth-form" id="login-form">
+      <input type="text" class="auth-input" id="login-nickname" placeholder="输入昵称" maxlength="12" />
+      <input type="password" class="auth-input" id="login-password" placeholder="输入密码" />
+      <button class="auth-btn" id="btn-login">登 录</button>
+      <div class="auth-msg" id="login-msg"></div>
+    </div>
+
+    <!-- Register Form -->
+    <div class="auth-form" id="register-form" style="display:none;">
+      <input type="text" class="auth-input" id="reg-nickname" placeholder="设置昵称（唯一，不能重复）" maxlength="12" />
+      <input type="password" class="auth-input" id="reg-password" placeholder="设置密码" />
+      <input type="password" class="auth-input" id="reg-password2" placeholder="确认密码" />
+      <button class="auth-btn" id="btn-register">注 册</button>
+      <div class="auth-msg" id="register-msg"></div>
     </div>
   </div>
 
-  <div class="home-section">
-    <div class="home-section-label">选择模式</div>
-    <div class="option-cards" id="mode-cards">
-      <div class="opt-card selected" data-mode="9">
-        <div class="opt-icon">⬛</div>
-        <div class="opt-title">9 × 9</div>
-        <div class="opt-desc">经典标准<br>81 格</div>
+  <!-- User Bar (shown after login) -->
+  <div class="user-bar" id="user-bar">
+    <div class="user-info">
+      <span class="user-icon">👤</span>
+      <span class="user-name" id="display-name">玩家</span>
+    </div>
+    <button class="btn-logout" id="btn-logout">退出登录</button>
+  </div>
+
+  <!-- Game options (hidden until login) -->
+  <div id="game-options" style="display:none;width:100%;">
+
+    <div class="home-section">
+      <div class="home-section-label">选择模式</div>
+      <div class="option-cards" id="mode-cards">
+        <div class="opt-card selected" data-mode="9">
+          <div class="opt-icon">⬛</div>
+          <div class="opt-title">9 × 9</div>
+          <div class="opt-desc">经典标准<br>81 格</div>
+        </div>
+        <div class="opt-card" data-mode="4">
+          <div class="opt-icon">▪️</div>
+          <div class="opt-title">4 × 4</div>
+          <div class="opt-desc">迷你模式<br>16 格</div>
+        </div>
       </div>
-      <div class="opt-card" data-mode="4">
-        <div class="opt-icon">▪️</div>
-        <div class="opt-title">4 × 4</div>
-        <div class="opt-desc">迷你模式<br>16 格</div>
+    </div>
+
+    <div class="home-section">
+      <div class="home-section-label">选择难度</div>
+      <div class="diff-cards" id="diff-cards">
+        <div class="diff-card selected-easy" data-diff="easy"><div class="diff-name">简单</div><div class="diff-hint">适合新手<br>提示较多</div></div>
+        <div class="diff-card" data-diff="medium"><div class="diff-name">中等</div><div class="diff-hint">均衡挑战<br>需要推理</div></div>
+        <div class="diff-card" data-diff="hard"><div class="diff-name">困难</div><div class="diff-hint">高手专属<br>极少提示</div></div>
       </div>
     </div>
-  </div>
 
-  <div class="home-section">
-    <div class="home-section-label">选择难度</div>
-    <div class="diff-cards" id="diff-cards">
-      <div class="diff-card selected-easy" data-diff="easy"><div class="diff-name">简单</div><div class="diff-hint">适合新手<br>提示较多</div></div>
-      <div class="diff-card" data-diff="medium"><div class="diff-name">中等</div><div class="diff-hint">均衡挑战<br>需要推理</div></div>
-      <div class="diff-card" data-diff="hard"><div class="diff-name">困难</div><div class="diff-hint">高手专属<br>极少提示</div></div>
-    </div>
+    <button class="btn-continue" id="btn-continue">▶ 继续游戏</button>
+    <button class="btn-start" id="btn-start">开始游戏</button>
+    <button class="btn-leaderboard" id="btn-lb-home">🏆 查看历史成绩</button>
   </div>
-
-  <button class="btn-continue" id="btn-continue">▶ 继续游戏</button>
-  <button class="btn-start" id="btn-start">开始游戏</button>
-  <button class="btn-leaderboard" id="btn-lb-home">🏆 查看历史成绩</button>
 </div>
 
 <!-- ══════ GAME SCREEN ══════ -->
@@ -408,7 +463,6 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
     </div>
   </div>
 
-  <!-- Mobile pad -->
   <div class="mobile-pad">
     <div class="input-mode-bar" id="input-mode-bar">
       <button class="imode-btn active" data-imode="pad" id="imode-pad">🔢 点击输入</button>
@@ -444,7 +498,7 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
     <div class="lb-tab" data-lbdiff="hard">困难</div>
   </div>
   <div class="lb-list" id="lb-list"></div>
-  <button class="btn-clear-lb" id="btn-clear-lb">清除当前成绩</button>
+  <button class="btn-clear-lb" id="btn-clear-lb">🗑️ 清除我的云端成绩</button>
 </div>
 
 <!-- ══════ COMPLETE OVERLAY ══════ -->
@@ -550,14 +604,181 @@ let errorCount=0,hintLeft=5,pencilMode=false;
 let timerSec=0,timerInt=null,finished=false;
 let inputMode='pad';
 
+// ── Auth State ────────────────────────────────────────────────────
+const LOGIN_KEY='sudoku_logged_user';
+let currentUser=null;
+
+function getLoggedUser(){
+  try{
+    const raw=localStorage.getItem(LOGIN_KEY);
+    if(!raw)return null;
+    return JSON.parse(raw);
+  }catch{return null;}
+}
+
+function saveLoggedUser(nickname){
+  localStorage.setItem(LOGIN_KEY,JSON.stringify({nickname,loginAt:Date.now()}));
+  currentUser=nickname;
+}
+
+function clearLoggedUser(){
+  localStorage.removeItem(LOGIN_KEY);
+  currentUser=null;
+}
+
+function isLoggedIn(){
+  return !!getLoggedUser();
+}
+
+// ── Auth UI ───────────────────────────────────────────────────────
+function showAuthUI(){
+  document.getElementById('auth-section').style.display='block';
+  document.getElementById('user-bar').style.display='none';
+  document.getElementById('game-options').style.display='none';
+}
+
+function showLoggedInUI(nickname){
+  document.getElementById('auth-section').style.display='none';
+  document.getElementById('user-bar').style.display='flex';
+  document.getElementById('display-name').textContent=nickname;
+  document.getElementById('game-options').style.display='block';
+  checkSavedGame();
+}
+
+function setAuthMsg(id, text, type){
+  const el=document.getElementById(id);
+  el.textContent=text;
+  el.className='auth-msg'+(type?' '+type:'');
+}
+
+// ── Auth toggle ───────────────────────────────────────────────────
+document.querySelectorAll('.auth-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const mode=tab.dataset.auth;
+    document.getElementById('login-form').style.display=mode==='login'?'flex':'none';
+    document.getElementById('register-form').style.display=mode==='register'?'flex':'none';
+    setAuthMsg('login-msg','');
+    setAuthMsg('register-msg','');
+  });
+});
+
+// ── Register ──────────────────────────────────────────────────────
+document.getElementById('btn-register').addEventListener('click',async ()=>{
+  const nickname=document.getElementById('reg-nickname').value.trim();
+  const password=document.getElementById('reg-password').value;
+  const password2=document.getElementById('reg-password2').value;
+  
+  if(!nickname){setAuthMsg('register-msg','请输入昵称','error');return;}
+  if(!password){setAuthMsg('register-msg','请输入密码','error');return;}
+  if(password!==password2){setAuthMsg('register-msg','两次密码不一致','error');return;}
+  if(password.length<3){setAuthMsg('register-msg','密码至少3位','error');return;}
+  
+  setAuthMsg('register-msg','注册中...','');
+  
+  try{
+    // 检查昵称是否已存在
+    const {data:exists,error:checkErr}=await supabaseClient
+      .from('users')
+      .select('id')
+      .eq('nickname',nickname)
+      .maybeSingle();
+    
+    if(checkErr)throw checkErr;
+    if(exists){setAuthMsg('register-msg','❌ 该昵称已被注册','error');return;}
+    
+    // 注册
+    const {error:insertErr}=await supabaseClient
+      .from('users')
+      .insert({nickname,password});
+    
+    if(insertErr)throw insertErr;
+    
+    setAuthMsg('register-msg','✅ 注册成功！请登录','success');
+    document.getElementById('reg-nickname').value='';
+    document.getElementById('reg-password').value='';
+    document.getElementById('reg-password2').value='';
+    
+    // 自动切换到登录
+    document.querySelector('[data-auth="login"]').click();
+    document.getElementById('login-nickname').value=nickname;
+    document.getElementById('login-password').focus();
+    
+  }catch(e){
+    console.error('注册失败:',e);
+    setAuthMsg('register-msg','❌ 注册失败：'+e.message,'error');
+  }
+});
+
+// ── Login ─────────────────────────────────────────────────────────
+document.getElementById('btn-login').addEventListener('click',async ()=>{
+  const nickname=document.getElementById('login-nickname').value.trim();
+  const password=document.getElementById('login-password').value;
+  
+  if(!nickname){setAuthMsg('login-msg','请输入昵称','error');return;}
+  if(!password){setAuthMsg('login-msg','请输入密码','error');return;}
+  
+  setAuthMsg('login-msg','登录中...','');
+  
+  try{
+    const {data:user,error}=await supabaseClient
+      .from('users')
+      .select('*')
+      .eq('nickname',nickname)
+      .eq('password',password)
+      .maybeSingle();
+    
+    if(error)throw error;
+    if(!user){setAuthMsg('login-msg','❌ 昵称或密码错误','error');return;}
+    
+    // 登录成功
+    saveLoggedUser(nickname);
+    setAuthMsg('login-msg','✅ 登录成功！','success');
+    showLoggedInUI(nickname);
+    promptPlayerName();
+    retryPendingScores();
+    
+  }catch(e){
+    console.error('登录失败:',e);
+    setAuthMsg('login-msg','❌ 登录失败：'+e.message,'error');
+  }
+});
+
+// ── Enter key for auth ───────────────────────────────────────────
+document.getElementById('login-password').addEventListener('keydown',e=>{
+  if(e.key==='Enter')document.getElementById('btn-login').click();
+});
+document.getElementById('reg-password2').addEventListener('keydown',e=>{
+  if(e.key==='Enter')document.getElementById('btn-register').click();
+});
+
+// ── Logout ────────────────────────────────────────────────────────
+document.getElementById('btn-logout').addEventListener('click',()=>{
+  if(!confirm('确认退出登录？'))return;
+  clearLoggedUser();
+  showAuthUI();
+  document.getElementById('login-nickname').value='';
+  document.getElementById('login-password').value='';
+  setAuthMsg('login-msg','已退出登录');
+  document.getElementById('btn-continue').style.display='none';
+});
+
+// ── ── ── ── ── ── ── ── ── ── ── ──
+
 // ── Player Name ──────────────────────────────────────────────────
 const PLAYER_NAME_KEY='sudoku_player_name';
 
 function getPlayerName(){
-  return localStorage.getItem(PLAYER_NAME_KEY)||'';
+  // 优先使用登录用户的昵称
+  const logged=getLoggedUser();
+  if(logged&&logged.nickname)return logged.nickname;
+  return localStorage.getItem(PLAYER_NAME_KEY)||'匿名玩家';
 }
 
 function setPlayerName(name){
+  // 如果已登录，不允许手动设置昵称
+  if(getLoggedUser())return;
   const trimmed=name.trim();
   if(trimmed){
     localStorage.setItem(PLAYER_NAME_KEY,trimmed);
@@ -565,12 +786,7 @@ function setPlayerName(name){
 }
 
 function promptPlayerName(){
-  const name=getPlayerName();
-  const input=document.getElementById('nickname-input');
-  if(input){
-    input.value=name;
-  }
-  return name||'匿名玩家';
+  // 已登录用户不需要手动设置
 }
 
 // ── Leaderboard Storage (Cloud + Local Fallback) ──────────────────
@@ -583,7 +799,6 @@ function saveLocalScores(scores){
   try{localStorage.setItem(LB_KEY,JSON.stringify(scores));}catch{}
 }
 
-// 提交成绩到云端
 async function submitScoreToCloud(n, diff, timeSec, errors) {
   try {
     const { data, error } = await supabaseClient
@@ -601,7 +816,6 @@ async function submitScoreToCloud(n, diff, timeSec, errors) {
     return data;
   } catch (e) {
     console.warn('云端提交失败，已保存到本地队列:', e.message);
-    // 失败时存本地队列，下次重试
     const pending = JSON.parse(localStorage.getItem('pending_scores') || '[]');
     pending.push({ n, diff, timeSec, errors, playerName: getPlayerName() || '匿名玩家' });
     localStorage.setItem('pending_scores', JSON.stringify(pending));
@@ -609,7 +823,6 @@ async function submitScoreToCloud(n, diff, timeSec, errors) {
   }
 }
 
-// 从云端获取排行榜
 async function fetchLeaderboardFromCloud(n, diff, limit = 10) {
   try {
     const { data, error } = await supabaseClient
@@ -635,7 +848,6 @@ async function fetchLeaderboardFromCloud(n, diff, limit = 10) {
   }
 }
 
-// 重新提交待处理的成绩
 async function retryPendingScores() {
   const pending = JSON.parse(localStorage.getItem('pending_scores') || '[]');
   if (!pending.length) return;
@@ -660,7 +872,6 @@ async function retryPendingScores() {
   localStorage.setItem('pending_scores', JSON.stringify(remaining));
 }
 
-// 计算排名
 async function calculateRank(n, diff, timeSec, errors) {
   try {
     const { count, error } = await supabaseClient
@@ -677,7 +888,6 @@ async function calculateRank(n, diff, timeSec, errors) {
   }
 }
 
-// 综合 saveScore：云端 + 本地备份
 async function saveScore(n, diff, timeSec, errors) {
   await submitScoreToCloud(n, diff, timeSec, errors);
   
@@ -694,7 +904,6 @@ async function saveScore(n, diff, timeSec, errors) {
   return rank;
 }
 
-// 综合 getScores：云端优先，本地回退
 async function getScores(n, diff) {
   const cloudData = await fetchLeaderboardFromCloud(n, diff);
   if (cloudData) return cloudData;
@@ -711,11 +920,52 @@ async function getScores(n, diff) {
   }));
 }
 
-function clearScores(n, diff) {
-  const scores = loadLocalScores();
-  delete scores[`${n}_${diff}`];
-  saveLocalScores(scores);
-  alert('本地成绩已清除。云端成绩需要联系管理员从 Supabase 后台删除。');
+// ── 清除云端成绩（需验证密码） ─────────────────────────────────────
+async function clearScores(n, diff) {
+  // 检查是否已登录
+  const logged=getLoggedUser();
+  if(!logged||!logged.nickname){
+    alert('请先登录后再清除自己的成绩');
+    return;
+  }
+  
+  // 弹出密码确认
+  const pwd=prompt('🔐 请输入你的密码以验证身份，确认清除你在「'+n+'×'+n+' '+{easy:'简单',medium:'中等',hard:'困难'}[diff]+'」的所有云端成绩：');
+  if(!pwd)return;
+  
+  try {
+    // 验证密码并删除
+    const { data, error } = await supabaseClient
+      .rpc('delete_my_scores', {
+        p_nickname: logged.nickname,
+        p_password: pwd,
+        p_board_size: n,
+        p_difficulty: diff
+      });
+    
+    if (error) throw error;
+    
+    if(data==='密码错误'){
+      alert('❌ 密码错误，删除失败');
+      return;
+    }
+    
+    // 也清除本地
+    const scores = loadLocalScores();
+    delete scores[`${n}_${diff}`];
+    saveLocalScores(scores);
+    
+    alert('✅ 已成功清除你的云端成绩！');
+    renderLeaderboard();
+    
+  } catch(e) {
+    console.error('云端清除失败:', e);
+    // 如果 RPC 函数不存在，回退到本地清除
+    const scores = loadLocalScores();
+    delete scores[`${n}_${diff}`];
+    saveLocalScores(scores);
+    alert('⚠️ 云端清除失败（请确认已在 Supabase 创建 delete_my_scores 函数），已清除本地成绩。');
+  }
 }
 
 // ── Game State Save/Load ────────────────────────────────────────────
@@ -782,9 +1032,15 @@ async function showHome(){
   hideAll();
   const hs=document.getElementById('home-screen');
   hs.style.display='flex';hs.classList.add('anim-in');
-  checkSavedGame();
-  promptPlayerName();
-  await retryPendingScores();
+  
+  // 检查登录状态
+  const logged=getLoggedUser();
+  if(logged&&logged.nickname){
+    showLoggedInUI(logged.nickname);
+    await retryPendingScores();
+  }else{
+    showAuthUI();
+  }
 }
 function showGame(){
   hideAll();
@@ -862,9 +1118,8 @@ document.getElementById('btn-lb-back').addEventListener('click',()=>{
   if(fromGame)showGame();else showHome();
 });
 document.getElementById('btn-clear-lb').addEventListener('click',()=>{
-  if(confirm(`确认清除 ${lbN}×${lbN} ${{easy:'简单',medium:'中等',hard:'困难'}[lbDiff]} 的所有成绩？`)){
+  if(confirm(`确认清除你在「${lbN}×${lbN} ${{easy:'简单',medium:'中等',hard:'困难'}[lbDiff]}」的云端成绩？（仅清除你自己的成绩）`)){
     clearScores(lbN,lbDiff);
-    renderLeaderboard();
   }
 });
 
@@ -1257,16 +1512,6 @@ document.getElementById('ov-lb').addEventListener('click',()=>{
 });
 document.getElementById('ov-home').addEventListener('click',()=>{
   document.getElementById('overlay').classList.remove('show');showHome();
-});
-
-// ── 昵称输入 ──
-document.getElementById('nickname-input')?.addEventListener('change', function() {
-  setPlayerName(this.value);
-});
-document.getElementById('nickname-input')?.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter') {
-    this.blur();
-  }
 });
 
 // ── Keyboard ─────────────────────────────────────────────────────
