@@ -40,6 +40,24 @@ body::before{
   margin-bottom:6px;
 }
 .home-sub{color:var(--text2);font-size:.88rem;margin-bottom:36px;letter-spacing:.04em;}
+
+/* ─── 昵称输入 ─── */
+.nickname-section{width:100%;margin-bottom:24px;}
+.nickname-wrap{
+  display:flex;align-items:center;gap:10px;
+  background:var(--surface);border:2px solid var(--border);
+  border-radius:12px;padding:8px 16px;
+  transition:border-color .2s;
+}
+.nickname-wrap:focus-within{border-color:var(--accent2);}
+.nickname-icon{font-size:1.2rem;}
+.nickname-input{
+  flex:1;background:transparent;border:none;outline:none;
+  color:var(--text);font-size:.95rem;font-weight:600;
+  letter-spacing:.03em;
+}
+.nickname-input::placeholder{color:var(--text3);}
+
 .home-section{width:100%;margin-bottom:24px;}
 .home-section-label{
   font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.16em;
@@ -318,7 +336,15 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
 <!-- ══════ HOME SCREEN ══════ -->
 <div id="home-screen">
   <div class="home-logo">数独</div>
-  <div class="home-sub">SUDOKU · 单人挑战</div>
+  
+  <div class="home-section" style="margin-bottom:12px;">
+    <div class="home-sub" style="margin-bottom:10px;">SUDOKU · 单人挑战</div>
+    <div class="nickname-wrap">
+      <span class="nickname-icon">👤</span>
+      <input type="text" class="nickname-input" id="nickname-input" 
+             placeholder="输入你的昵称（可选）" maxlength="12" />
+    </div>
+  </div>
 
   <div class="home-section">
     <div class="home-section-label">选择模式</div>
@@ -384,21 +410,17 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
 
   <!-- Mobile pad -->
   <div class="mobile-pad">
-    <!-- Input mode toggle -->
     <div class="input-mode-bar" id="input-mode-bar">
       <button class="imode-btn active" data-imode="pad" id="imode-pad">🔢 点击输入</button>
       <button class="imode-btn" data-imode="keyboard" id="imode-keyboard">⌨️ 键盘输入</button>
     </div>
-    <!-- Mobile tools row -->
     <div class="mobile-tools">
       <button class="mobile-tool-btn" id="mob-pencil">✏ 笔记</button>
       <button class="mobile-tool-btn" id="mob-hint">💡 提示(<span id="mob-hint-left">5</span>)</button>
       <button class="mobile-tool-btn" id="mob-erase">⌫ 擦除</button>
       <button class="mobile-tool-btn red" id="mob-new">↺ 新局</button>
     </div>
-    <!-- Numpad grid (shown in pad mode) -->
     <div class="mobile-numgrid" id="numpad-m"></div>
-    <!-- Keyboard hint (shown in keyboard mode) -->
     <div id="keyboard-hint" style="display:none;text-align:center;color:var(--text3);font-size:.8rem;padding:16px 0;">
       请使用手机弹出的系统键盘输入数字<br>
       <span style="color:var(--text2);font-size:.72rem;">点击棋盘格子后会自动弹出键盘</span>
@@ -526,7 +548,30 @@ let solution=[],board=[],notes=[];
 let selected=null;
 let errorCount=0,hintLeft=5,pencilMode=false;
 let timerSec=0,timerInt=null,finished=false;
-let inputMode='pad'; // 'pad' | 'keyboard'
+let inputMode='pad';
+
+// ── Player Name ──────────────────────────────────────────────────
+const PLAYER_NAME_KEY='sudoku_player_name';
+
+function getPlayerName(){
+  return localStorage.getItem(PLAYER_NAME_KEY)||'';
+}
+
+function setPlayerName(name){
+  const trimmed=name.trim();
+  if(trimmed){
+    localStorage.setItem(PLAYER_NAME_KEY,trimmed);
+  }
+}
+
+function promptPlayerName(){
+  const name=getPlayerName();
+  const input=document.getElementById('nickname-input');
+  if(input){
+    input.value=name;
+  }
+  return name||'匿名玩家';
+}
 
 // ── Leaderboard Storage (Cloud + Local Fallback) ──────────────────
 const LB_KEY='sudoku_scores_v2';
@@ -544,7 +589,7 @@ async function submitScoreToCloud(n, diff, timeSec, errors) {
     const { data, error } = await supabaseClient
       .from('scores')
       .insert({
-        player_name: '匿名玩家',
+        player_name: getPlayerName() || '匿名玩家',
         board_size: n,
         difficulty: diff,
         time_seconds: timeSec,
@@ -558,7 +603,7 @@ async function submitScoreToCloud(n, diff, timeSec, errors) {
     console.warn('云端提交失败，已保存到本地队列:', e.message);
     // 失败时存本地队列，下次重试
     const pending = JSON.parse(localStorage.getItem('pending_scores') || '[]');
-    pending.push({ n, diff, timeSec, errors });
+    pending.push({ n, diff, timeSec, errors, playerName: getPlayerName() || '匿名玩家' });
     localStorage.setItem('pending_scores', JSON.stringify(pending));
     return null;
   }
@@ -601,7 +646,7 @@ async function retryPendingScores() {
       const { error } = await supabaseClient
         .from('scores')
         .insert({
-          player_name: '匿名玩家',
+          player_name: item.playerName || '匿名玩家',
           board_size: item.n,
           difficulty: item.diff,
           time_seconds: item.timeSec,
@@ -628,16 +673,14 @@ async function calculateRank(n, diff, timeSec, errors) {
     if (error) throw error;
     return (count || 0) + 1;
   } catch {
-    return 1; // 无法计算时返回第1名
+    return 1;
   }
 }
 
 // 综合 saveScore：云端 + 本地备份
 async function saveScore(n, diff, timeSec, errors) {
-  // 1. 先提交到云端
   await submitScoreToCloud(n, diff, timeSec, errors);
   
-  // 2. 也存本地作为备份
   const localScores = loadLocalScores();
   const key = `${n}_${diff}`;
   if (!localScores[key]) localScores[key] = [];
@@ -647,18 +690,15 @@ async function saveScore(n, diff, timeSec, errors) {
   localScores[key] = localScores[key].slice(0,10);
   saveLocalScores(localScores);
   
-  // 3. 计算排名（从云端）
   const rank = await calculateRank(n, diff, timeSec, errors);
   return rank;
 }
 
 // 综合 getScores：云端优先，本地回退
 async function getScores(n, diff) {
-  // 尝试从云端获取
   const cloudData = await fetchLeaderboardFromCloud(n, diff);
   if (cloudData) return cloudData;
   
-  // 云端失败 → 回退到本地
   const localScores = loadLocalScores();
   const key = `${n}_${diff}`;
   const data = localScores[key] || [];
@@ -692,9 +732,7 @@ function saveGameState(){
       savedAt:Date.now()
     };
     localStorage.setItem(SAVE_KEY,JSON.stringify(state));
-  }catch(e){
-    // 存储空间不足等情况静默失败
-  }
+  }catch(e){}
 }
 
 function loadGameState(){
@@ -745,8 +783,7 @@ async function showHome(){
   const hs=document.getElementById('home-screen');
   hs.style.display='flex';hs.classList.add('anim-in');
   checkSavedGame();
-  
-  // 重试之前提交失败的成绩
+  promptPlayerName();
   await retryPendingScores();
 }
 function showGame(){
@@ -950,7 +987,6 @@ function renderBoard(){
   refreshAll(nfs);
 }
 
-// ── Cell click ────────────────────────────────────────────────────
 function onCellClick(r,c){
   selectCell(r,c);
   if(inputMode==='keyboard'&&window.innerWidth<=640){
@@ -1140,7 +1176,6 @@ async function checkDone(){
   finished=true;stopTimer();
   clearSavedGame();
   
-  // 异步保存成绩到云端+本地
   const rank=await saveScore(N,DIFF,timerSec,errorCount);
   
   setTimeout(()=>{
@@ -1224,6 +1259,16 @@ document.getElementById('ov-home').addEventListener('click',()=>{
   document.getElementById('overlay').classList.remove('show');showHome();
 });
 
+// ── 昵称输入 ──
+document.getElementById('nickname-input')?.addEventListener('change', function() {
+  setPlayerName(this.value);
+});
+document.getElementById('nickname-input')?.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') {
+    this.blur();
+  }
+});
+
 // ── Keyboard ─────────────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
   if(document.getElementById('game-screen').style.display==='none')return;
@@ -1266,7 +1311,6 @@ window.addEventListener('resize',()=>{
   if(board.length&&document.getElementById('game-screen').style.display!=='none')renderBoard();
 });
 
-// 页面关闭/刷新前自动保存
 window.addEventListener('beforeunload',()=>{
   if(board.length&&document.getElementById('game-screen').style.display!=='none'){
     saveGameState();
