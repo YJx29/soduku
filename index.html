@@ -89,6 +89,16 @@ body::before{
 .btn-start:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(124,58,237,.6);}
 .btn-start:active{transform:translateY(0);}
 
+.btn-continue{
+  width:100%;padding:16px;border-radius:14px;border:none;
+  background:linear-gradient(135deg,#00d4aa,#60a5fa);
+  color:#fff;font-size:1.05rem;font-weight:800;letter-spacing:.06em;cursor:pointer;
+  box-shadow:0 6px 28px rgba(0,212,170,.45);
+  transition:transform .12s,box-shadow .12s;margin-bottom:10px;display:none;
+}
+.btn-continue:hover{transform:translateY(-2px);box-shadow:0 10px 36px rgba(0,212,170,.6);}
+.btn-continue:active{transform:translateY(0);}
+
 .btn-leaderboard{
   width:100%;padding:12px;border-radius:12px;border:1px solid var(--border);
   background:var(--surface);color:var(--text2);font-size:.88rem;font-weight:600;
@@ -335,6 +345,7 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
     </div>
   </div>
 
+  <button class="btn-continue" id="btn-continue">▶ 继续游戏</button>
   <button class="btn-start" id="btn-start">开始游戏</button>
   <button class="btn-leaderboard" id="btn-lb-home">🏆 查看历史成绩</button>
 </div>
@@ -430,7 +441,19 @@ td.cell.hint-flash{background:rgba(0,212,170,.25)!important;}
   </div>
 </div>
 
+<!-- ══════ Supabase SDK ══════ -->
+<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
 <script>
+// ===== Supabase 配置 =====
+// ★★★ 请替换为你的 Supabase 项目信息 ★★★
+const SUPABASE_URL = 'https://dwjcriymudquxzeknbun.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3amNyaXltdWRxdXh6ZWtuYnVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0MTYyMDUsImV4cCI6MjA5NDk5MjIwNX0.A1TUMOGTQgqvd64IT-aeKfcmJWVT8-IUJqmkxtTxKy4';
+// =========================
+
+const { createClient } = supabase;
+const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 (()=>{
 'use strict';
 
@@ -505,32 +528,208 @@ let errorCount=0,hintLeft=5,pencilMode=false;
 let timerSec=0,timerInt=null,finished=false;
 let inputMode='pad'; // 'pad' | 'keyboard'
 
-// ── Leaderboard Storage ───────────────────────────────────────────
+// ── Leaderboard Storage (Cloud + Local Fallback) ──────────────────
 const LB_KEY='sudoku_scores_v2';
-function loadScores(){
+
+function loadLocalScores(){
   try{return JSON.parse(localStorage.getItem(LB_KEY))||{};}catch{return{};}
 }
-function saveScore(n,diff,timeSec,errors){
-  const scores=loadScores();
-  const key=`${n}_${diff}`;
-  if(!scores[key])scores[key]=[];
-  const entry={time:timeSec,errors,date:new Date().toLocaleDateString('zh-CN')};
-  scores[key].push(entry);
-  // Keep top 10 sorted by time asc, then errors asc
-  scores[key].sort((a,b)=>a.time-b.time||a.errors-b.errors);
-  scores[key]=scores[key].slice(0,10);
-  localStorage.setItem(LB_KEY,JSON.stringify(scores));
-  // Return rank (1-based)
-  return scores[key].findIndex(e=>e.time===entry.time&&e.errors===entry.errors&&e.date===entry.date)+1;
+function saveLocalScores(scores){
+  try{localStorage.setItem(LB_KEY,JSON.stringify(scores));}catch{}
 }
-function getScores(n,diff){
-  const scores=loadScores();
-  return scores[`${n}_${diff}`]||[];
+
+// 提交成绩到云端
+async function submitScoreToCloud(n, diff, timeSec, errors) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('scores')
+      .insert({
+        player_name: '匿名玩家',
+        board_size: n,
+        difficulty: diff,
+        time_seconds: timeSec,
+        errors: errors
+      })
+      .select('id');
+    
+    if (error) throw error;
+    return data;
+  } catch (e) {
+    console.warn('云端提交失败，已保存到本地队列:', e.message);
+    // 失败时存本地队列，下次重试
+    const pending = JSON.parse(localStorage.getItem('pending_scores') || '[]');
+    pending.push({ n, diff, timeSec, errors });
+    localStorage.setItem('pending_scores', JSON.stringify(pending));
+    return null;
+  }
 }
-function clearScores(n,diff){
-  const scores=loadScores();
+
+// 从云端获取排行榜
+async function fetchLeaderboardFromCloud(n, diff, limit = 10) {
+  try {
+    const { data, error } = await supabaseClient
+      .from('scores')
+      .select('player_name, time_seconds, errors, created_at')
+      .eq('board_size', n)
+      .eq('difficulty', diff)
+      .order('time_seconds', { ascending: true })
+      .order('errors', { ascending: true })
+      .limit(limit);
+    
+    if (error) throw error;
+    return (data || []).map((row, i) => ({
+      player: row.player_name,
+      time: row.time_seconds,
+      errors: row.errors,
+      date: new Date(row.created_at).toLocaleDateString('zh-CN'),
+      rank: i + 1
+    }));
+  } catch (e) {
+    console.warn('云端获取排行榜失败，回退到本地:', e.message);
+    return null;
+  }
+}
+
+// 重新提交待处理的成绩
+async function retryPendingScores() {
+  const pending = JSON.parse(localStorage.getItem('pending_scores') || '[]');
+  if (!pending.length) return;
+  
+  const remaining = [];
+  for (const item of pending) {
+    try {
+      const { error } = await supabaseClient
+        .from('scores')
+        .insert({
+          player_name: '匿名玩家',
+          board_size: item.n,
+          difficulty: item.diff,
+          time_seconds: item.timeSec,
+          errors: item.errors
+        });
+      if (error) remaining.push(item);
+    } catch {
+      remaining.push(item);
+    }
+  }
+  localStorage.setItem('pending_scores', JSON.stringify(remaining));
+}
+
+// 计算排名
+async function calculateRank(n, diff, timeSec, errors) {
+  try {
+    const { count, error } = await supabaseClient
+      .from('scores')
+      .select('*', { count: 'exact', head: true })
+      .eq('board_size', n)
+      .eq('difficulty', diff)
+      .or(`time_seconds.lt.${timeSec},and(time_seconds.eq.${timeSec},errors.lt.${errors})`);
+    
+    if (error) throw error;
+    return (count || 0) + 1;
+  } catch {
+    return 1; // 无法计算时返回第1名
+  }
+}
+
+// 综合 saveScore：云端 + 本地备份
+async function saveScore(n, diff, timeSec, errors) {
+  // 1. 先提交到云端
+  await submitScoreToCloud(n, diff, timeSec, errors);
+  
+  // 2. 也存本地作为备份
+  const localScores = loadLocalScores();
+  const key = `${n}_${diff}`;
+  if (!localScores[key]) localScores[key] = [];
+  const entry = { time: timeSec, errors, date: new Date().toLocaleDateString('zh-CN') };
+  localScores[key].push(entry);
+  localScores[key].sort((a,b)=>a.time-b.time||a.errors-b.errors);
+  localScores[key] = localScores[key].slice(0,10);
+  saveLocalScores(localScores);
+  
+  // 3. 计算排名（从云端）
+  const rank = await calculateRank(n, diff, timeSec, errors);
+  return rank;
+}
+
+// 综合 getScores：云端优先，本地回退
+async function getScores(n, diff) {
+  // 尝试从云端获取
+  const cloudData = await fetchLeaderboardFromCloud(n, diff);
+  if (cloudData) return cloudData;
+  
+  // 云端失败 → 回退到本地
+  const localScores = loadLocalScores();
+  const key = `${n}_${diff}`;
+  const data = localScores[key] || [];
+  return data.map((e, i) => ({
+    player: '本地玩家',
+    time: e.time,
+    errors: e.errors,
+    date: e.date,
+    rank: i + 1
+  }));
+}
+
+function clearScores(n, diff) {
+  const scores = loadLocalScores();
   delete scores[`${n}_${diff}`];
-  localStorage.setItem(LB_KEY,JSON.stringify(scores));
+  saveLocalScores(scores);
+  alert('本地成绩已清除。云端成绩需要联系管理员从 Supabase 后台删除。');
+}
+
+// ── Game State Save/Load ────────────────────────────────────────────
+const SAVE_KEY='sudoku_current_game';
+
+function saveGameState(){
+  try{
+    const state={
+      N,DIFF,BOX,
+      solution,
+      board:board.map(r=>r.map(c=>({given:c.given,val:c.val,error:c.error}))),
+      notes:notes.map(r=>r.map(s=>[...s])),
+      timerSec,errorCount,hintLeft,pencilMode,finished,
+      savedAt:Date.now()
+    };
+    localStorage.setItem(SAVE_KEY,JSON.stringify(state));
+  }catch(e){
+    // 存储空间不足等情况静默失败
+  }
+}
+
+function loadGameState(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw)return null;
+    const state=JSON.parse(raw);
+    if(Date.now()-state.savedAt>7*24*60*60*1000){
+      localStorage.removeItem(SAVE_KEY);
+      return null;
+    }
+    return state;
+  }catch(e){
+    localStorage.removeItem(SAVE_KEY);
+    return null;
+  }
+}
+
+function clearSavedGame(){
+  localStorage.removeItem(SAVE_KEY);
+}
+
+function restoreGameState(state){
+  N=state.N;
+  BOX=state.BOX;
+  DIFF=state.DIFF;
+  solution=state.solution;
+  board=state.board;
+  notes=state.notes.map(r=>r.map(arr=>new Set(arr)));
+  timerSec=state.timerSec;
+  errorCount=state.errorCount;
+  hintLeft=state.hintLeft;
+  pencilMode=state.pencilMode;
+  finished=state.finished;
+  selected=null;
 }
 
 // ── Screen helpers ────────────────────────────────────────────────
@@ -539,12 +738,16 @@ function hideAll(){
     document.getElementById(id).style.display='none';
   });
 }
-function showHome(){
+async function showHome(){
   stopTimer();
   document.getElementById('overlay').classList.remove('show');
   hideAll();
   const hs=document.getElementById('home-screen');
   hs.style.display='flex';hs.classList.add('anim-in');
+  checkSavedGame();
+  
+  // 重试之前提交失败的成绩
+  await retryPendingScores();
 }
 function showGame(){
   hideAll();
@@ -573,49 +776,80 @@ document.getElementById('diff-cards').addEventListener('click',e=>{
   });
   card.classList.add('selected-'+card.dataset.diff);selectedDiff=card.dataset.diff;
 });
+
+function checkSavedGame(){
+  const state=loadGameState();
+  const btn=document.getElementById('btn-continue');
+  if(state&&!state.finished){
+    btn.style.display='block';
+    const diffMap={easy:'简单',medium:'中等',hard:'困难'};
+    btn.textContent='▶ 继续游戏  '+state.N+'×'+state.N+' '+diffMap[state.DIFF];
+  }else{
+    btn.style.display='none';
+  }
+}
+
 document.getElementById('btn-start').addEventListener('click',()=>{
   N=selectedMode;BOX=Math.sqrt(N);DIFF=selectedDiff;
-  showGame();startNewGame();
+  showGame();startNewGame(false);
+});
+document.getElementById('btn-continue').addEventListener('click',()=>{
+  const state=loadGameState();
+  if(state){
+    restoreGameState(state);
+    showGame();
+    startNewGame(true);
+  }
 });
 document.getElementById('btn-lb-home').addEventListener('click',()=>showLeaderboard(false));
 
 // ── Leaderboard screen ────────────────────────────────────────────
 let lbN=9,lbDiff='easy';
-document.getElementById('lb-mode-tabs').addEventListener('click',e=>{
+
+document.getElementById('lb-mode-tabs').addEventListener('click',async (e)=>{
   const tab=e.target.closest('.lb-mode-tab');if(!tab)return;
   document.querySelectorAll('.lb-mode-tab').forEach(t=>t.classList.remove('active'));
-  tab.classList.add('active');lbN=parseInt(tab.dataset.lbmode);renderLeaderboard();
+  tab.classList.add('active');lbN=parseInt(tab.dataset.lbmode);
+  await renderLeaderboard();
 });
-document.getElementById('lb-tabs').addEventListener('click',e=>{
+
+document.getElementById('lb-tabs').addEventListener('click',async (e)=>{
   const tab=e.target.closest('.lb-tab');if(!tab)return;
   document.querySelectorAll('.lb-tab').forEach(t=>t.classList.remove('active-easy','active-medium','active-hard'));
-  lbDiff=tab.dataset.lbdiff;tab.classList.add('active-'+lbDiff);renderLeaderboard();
+  lbDiff=tab.dataset.lbdiff;tab.classList.add('active-'+lbDiff);
+  await renderLeaderboard();
 });
+
 document.getElementById('btn-lb-back').addEventListener('click',()=>{
   const fromGame=document.getElementById('btn-lb-back').dataset.fromGame==='1';
   if(fromGame)showGame();else showHome();
 });
 document.getElementById('btn-clear-lb').addEventListener('click',()=>{
   if(confirm(`确认清除 ${lbN}×${lbN} ${{easy:'简单',medium:'中等',hard:'困难'}[lbDiff]} 的所有成绩？`)){
-    clearScores(lbN,lbDiff);renderLeaderboard();
+    clearScores(lbN,lbDiff);
+    renderLeaderboard();
   }
 });
 
 function fmt(s){return String(0|s/60).padStart(2,'0')+':'+String(s%60).padStart(2,'0');}
 
-function renderLeaderboard(){
+async function renderLeaderboard(){
   const list=document.getElementById('lb-list');
-  const data=getScores(lbN,lbDiff);
+  list.innerHTML='<div class="lb-empty" style="color:var(--text3);">加载中...</div>';
+  
+  const data=await getScores(lbN,lbDiff);
+  
   if(!data.length){
-    list.innerHTML='<div class="lb-empty">暂无成绩，快去挑战吧！</div>';return;
+    list.innerHTML='<div class="lb-empty">暂无成绩，快去挑战吧！</div>';
+    return;
   }
   const medals=['🥇','🥈','🥉'];
   list.innerHTML=data.map((e,i)=>`
     <div class="lb-row">
-      <div class="lb-rank">${medals[i]||'#'+(i+1)}</div>
+      <div class="lb-rank">${i<3?medals[i]:'#'+(i+1)}</div>
       <div class="lb-info">
         <div class="lb-time">${fmt(e.time)}</div>
-        <div class="lb-meta">${e.date}</div>
+        <div class="lb-meta">${e.player} · ${e.date}</div>
       </div>
       <div class="lb-errs">错误 ${e.errors}</div>
     </div>
@@ -633,8 +867,12 @@ function startTimer(){
 function stopTimer(){clearInterval(timerInt);timerInt=null;}
 
 // ── Start new game ────────────────────────────────────────────────
-function startNewGame(){
-  selected=null;errorCount=0;hintLeft=5;pencilMode=false;finished=false;
+function startNewGame(resume){
+  if(!resume){
+    clearSavedGame();
+    selected=null;errorCount=0;hintLeft=5;pencilMode=false;finished=false;
+  }
+  
   document.getElementById('overlay').classList.remove('show');
   document.getElementById('btn-pencil').classList.remove('active');
   document.getElementById('mob-pencil').classList.remove('active');
@@ -644,18 +882,41 @@ function startNewGame(){
   const diffMap={easy:'简单',medium:'中等',hard:'困难'};
   document.getElementById('diff-disp').innerHTML=`<span class="dbadge ${DIFF}">${diffMap[DIFF]}</span>`;
   stopTimer();
-  const g=generate(N,DIFF);
-  solution=g.solution;
-  board=g.puzzle.map(r=>r.map(v=>({given:v!==0,val:v,error:false})));
-  notes=Array.from({length:N},()=>Array.from({length:N},()=>new Set()));
-  renderBoard();buildNumpad();startTimer();
+
+  if(resume){
+    renderBoard();
+    buildNumpad();
+    refreshAll();
+    document.getElementById('timer').textContent=fmt(timerSec);
+    clearInterval(timerInt);
+    if(!finished){
+      timerInt=setInterval(()=>{
+        if(!finished){timerSec++;document.getElementById('timer').textContent=fmt(timerSec);}
+      },1000);
+    }
+    if(pencilMode){
+      document.getElementById('btn-pencil').classList.add('active');
+      document.getElementById('mob-pencil').classList.add('active');
+    }
+    if(finished){
+      showCompletionOverlay();
+    }
+  }else{
+    const g=generate(N,DIFF);
+    solution=g.solution;
+    board=g.puzzle.map(r=>r.map(v=>({given:v!==0,val:v,error:false})));
+    notes=Array.from({length:N},()=>Array.from({length:N},()=>new Set()));
+    renderBoard();
+    buildNumpad();
+    startTimer();
+  }
 }
 
-// ── Cell size calculation (Bug fix: account for padding/border) ───
+// ── Cell size calculation ─────────────────────────────────────────
 function getCellSize(){
   const vw=Math.min(window.innerWidth||800,800);
   const isMobile=window.innerWidth<=640;
-  const padding=isMobile?28:80; // horizontal padding
+  const padding=isMobile?28:80;
   const panelW=isMobile?0:200;
   const gap=isMobile?0:20;
   const avail=vw-panelW-gap-padding;
@@ -689,10 +950,9 @@ function renderBoard(){
   refreshAll(nfs);
 }
 
-// ── Cell click: handle keyboard mode ─────────────────────────────
+// ── Cell click ────────────────────────────────────────────────────
 function onCellClick(r,c){
   selectCell(r,c);
-  // In keyboard mode on mobile, focus a hidden input to trigger keyboard
   if(inputMode==='keyboard'&&window.innerWidth<=640){
     const hi=document.getElementById('hidden-input');
     if(hi){hi.focus();}
@@ -749,7 +1009,6 @@ function refreshAll(nfsPassed){
 
 // ── Numpad ────────────────────────────────────────────────────────
 function buildNumpad(){
-  // Desktop numpad
   const el=document.getElementById('numpad');
   if(el){
     const cols=N===4?4:3;
@@ -763,7 +1022,6 @@ function buildNumpad(){
     e.className='num-btn';e.style.fontSize='.9rem';e.textContent='⌫';
     e.addEventListener('click',()=>inputNum(0));el.appendChild(e);
   }
-  // Mobile numpad
   buildMobileNumpad();
 }
 function buildMobileNumpad(){
@@ -794,7 +1052,6 @@ function setInputMode(mode){
   } else {
     numgrid.style.display='none';
     kbhint.style.display='block';
-    // Create hidden input for triggering keyboard
     ensureHiddenInput();
   }
 }
@@ -811,7 +1068,6 @@ function ensureHiddenInput(){
     inp.value='';
   });
   inp.addEventListener('keydown',e=>{
-    // Arrow key navigation
     if(!selected)return;
     const dirs={ArrowUp:[-1,0],ArrowDown:[1,0],ArrowLeft:[0,-1],ArrowRight:[0,1]};
     if(dirs[e.key]){
@@ -849,7 +1105,9 @@ function inputNum(n){
       if(cell.error){errorCount++;updateErr();shakeCell(r,c);}
     }
   }
-  refreshAll();checkDone();
+  refreshAll();
+  checkDone();
+  if(!finished)saveGameState();
 }
 
 function shakeCell(r,c){
@@ -871,14 +1129,20 @@ function hint(){
   document.getElementById('mob-hint-left').textContent=hintLeft;
   const td=getCell(r,c);
   if(td){td.classList.add('hint-flash');setTimeout(()=>td.classList.remove('hint-flash'),800);}
-  refreshAll();checkDone();
+  refreshAll();
+  checkDone();
+  if(!finished)saveGameState();
 }
 
-function checkDone(){
+async function checkDone(){
   for(let r=0;r<N;r++)for(let c=0;c<N;c++)
     if(board[r][c].val!==solution[r][c])return;
   finished=true;stopTimer();
-  const rank=saveScore(N,DIFF,timerSec,errorCount);
+  clearSavedGame();
+  
+  // 异步保存成绩到云端+本地
+  const rank=await saveScore(N,DIFF,timerSec,errorCount);
+  
   setTimeout(()=>{
     document.getElementById('ov-time').textContent=fmt(timerSec);
     document.getElementById('ov-err').textContent=errorCount;
@@ -891,6 +1155,15 @@ function checkDone(){
     document.getElementById('ov-info').textContent=`${diffMap[DIFF]} · ${N}×${N} 模式`;
     document.getElementById('overlay').classList.add('show');
   },400);
+}
+
+function showCompletionOverlay(){
+  document.getElementById('ov-time').textContent=fmt(timerSec);
+  document.getElementById('ov-err').textContent=errorCount;
+  document.getElementById('ov-rank').textContent='-';
+  const diffMap={easy:'简单',medium:'中等',hard:'困难'};
+  document.getElementById('ov-info').textContent=`${diffMap[DIFF]} · ${N}×${N} 模式`;
+  document.getElementById('overlay').classList.add('show');
 }
 
 function updateErr(){
@@ -907,7 +1180,12 @@ document.getElementById('mob-pencil').addEventListener('click',()=>{
 });
 document.getElementById('mob-hint').addEventListener('click',hint);
 document.getElementById('mob-erase').addEventListener('click',()=>inputNum(0));
-document.getElementById('mob-new').addEventListener('click',startNewGame);
+document.getElementById('mob-new').addEventListener('click',()=>{
+  if(confirm('确认开始新游戏？当前进度将丢失。')){
+    N=selectedMode;BOX=Math.sqrt(N);DIFF=selectedDiff;
+    startNewGame(false);
+  }
+});
 
 // ── Desktop bindings ──────────────────────────────────────────────
 document.getElementById('btn-home').addEventListener('click',()=>{
@@ -919,14 +1197,20 @@ document.getElementById('btn-pencil').addEventListener('click',()=>{
   document.getElementById('mob-pencil').classList.toggle('active',pencilMode);
 });
 document.getElementById('btn-hint').addEventListener('click',hint);
-document.getElementById('btn-new').addEventListener('click',startNewGame);
+document.getElementById('btn-new').addEventListener('click',()=>{
+  if(confirm('确认开始新游戏？当前进度将丢失。')){
+    N=selectedMode;BOX=Math.sqrt(N);DIFF=selectedDiff;
+    startNewGame(false);
+  }
+});
 document.getElementById('ov-again').addEventListener('click',()=>{
-  document.getElementById('overlay').classList.remove('show');startNewGame();
+  document.getElementById('overlay').classList.remove('show');
+  N=selectedMode;BOX=Math.sqrt(N);DIFF=selectedDiff;
+  startNewGame(false);
 });
 document.getElementById('ov-lb').addEventListener('click',()=>{
   document.getElementById('overlay').classList.remove('show');
   lbN=N;lbDiff=DIFF;
-  // sync lb tabs
   document.querySelectorAll('.lb-mode-tab').forEach(t=>{
     t.classList.toggle('active',parseInt(t.dataset.lbmode)===N);
   });
@@ -944,7 +1228,6 @@ document.getElementById('ov-home').addEventListener('click',()=>{
 document.addEventListener('keydown',e=>{
   if(document.getElementById('game-screen').style.display==='none')return;
   if(finished)return;
-  // Don't intercept if hidden input is focused
   if(document.activeElement&&document.activeElement.id==='hidden-input')return;
   if(!selected){if(e.key==='Enter')selectCell(0,0);return;}
   const {r,c}=selected;
@@ -965,14 +1248,13 @@ document.addEventListener('keydown',e=>{
   }
 });
 
-// ── Bug fix: visibility change should not restart timer from 0 ────
+// ── Auto-save on visibility change ────────────────────────────────
 document.addEventListener('visibilitychange',()=>{
   if(document.getElementById('game-screen').style.display==='none')return;
   if(document.hidden){
-    // Just pause - don't clear
+    if(board.length)saveGameState();
     clearInterval(timerInt);timerInt=null;
   } else if(!finished&&board.length){
-    // Resume from current timerSec
     clearInterval(timerInt);
     timerInt=setInterval(()=>{
       if(!finished){timerSec++;document.getElementById('timer').textContent=fmt(timerSec);}
@@ -982,6 +1264,13 @@ document.addEventListener('visibilitychange',()=>{
 
 window.addEventListener('resize',()=>{
   if(board.length&&document.getElementById('game-screen').style.display!=='none')renderBoard();
+});
+
+// 页面关闭/刷新前自动保存
+window.addEventListener('beforeunload',()=>{
+  if(board.length&&document.getElementById('game-screen').style.display!=='none'){
+    saveGameState();
+  }
 });
 
 // Boot
